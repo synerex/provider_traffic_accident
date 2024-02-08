@@ -78,7 +78,7 @@ func main() {
 
 	smo := sxutil.SupplyOpts{
 		Name: role,
-		JSON: "{\"chincha\": \"chincha\"}", // ここに事故情報を入れる
+		JSON: "{\"trafficAccident\": \"chincha\"}", // ここに事故情報を入れる
 	}
 	_, nerr := envClient.NotifySupply(&smo)
 	if nerr != nil {
