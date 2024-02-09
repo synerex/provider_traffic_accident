@@ -76,15 +76,31 @@ func main() {
 
 	envClient := sxutil.NewSXServiceClient(client, pbase.JSON_DATA_SVC, fmt.Sprintf("{Client:%s}", role))
 
-	smo := sxutil.SupplyOpts{
-		Name: role,
-		JSON: "{\"trafficAccident\": \"chincha\"}", // ここに事故情報を入れる
-	}
-	_, nerr := envClient.NotifySupply(&smo)
-	if nerr != nil {
-		log.Printf("Send Fail! %v\n", nerr)
-	} else {
-		//							log.Printf("Sent OK! %#v\n", ge)
+	// タイマーを開始する
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
+	// 現在時刻を取得し、次の実行時刻まで待機する
+	start := time.Now()
+	adjust := start.Truncate(15 * time.Second).Add(15 * time.Second)
+	time.Sleep(adjust.Sub(start))
+
+	for {
+		select {
+		case t := <-ticker.C:
+			// ここに実行したい処理を書く
+			fmt.Println("実行時刻:", t.Format("15:04:05"))
+			smo := sxutil.SupplyOpts{
+				Name: role,
+				JSON: "{\"trafficAccident\": \"chincha\"}", // ここに事故情報を入れる
+			}
+			_, nerr := envClient.NotifySupply(&smo)
+			if nerr != nil {
+				log.Printf("Send Fail! %v\n", nerr)
+			} else {
+				//							log.Printf("Sent OK! %#v\n", ge)
+			}
+		}
 	}
 
 	// wg.Add(1)
