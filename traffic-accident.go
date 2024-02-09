@@ -92,7 +92,7 @@ func main() {
 			fmt.Println("実行時刻:", t.Format("15:04:05"))
 			smo := sxutil.SupplyOpts{
 				Name: role,
-				JSON: "{\"trafficAccident\": \"chincha\"}", // ここに事故情報を入れる
+				JSON: fmt.Sprintf("{\"%s\": \"chincha\"}", role), // ここに事故情報を入れる
 			}
 			_, nerr := envClient.NotifySupply(&smo)
 			if nerr != nil {
