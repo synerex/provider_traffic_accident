@@ -85,6 +85,7 @@ func main() {
 	adjust := start.Truncate(15 * time.Second).Add(15 * time.Second)
 	time.Sleep(adjust.Sub(start))
 
+	i := 0
 	for {
 		select {
 		case t := <-ticker.C:
@@ -92,7 +93,10 @@ func main() {
 			fmt.Println("実行時刻:", t.Format("15:04:05"))
 			smo := sxutil.SupplyOpts{
 				Name: role,
-				JSON: fmt.Sprintf("{\"%s\": \"chincha\"}", role), // ここに事故情報を入れる
+				JSON: fmt.Sprintf(`{ "%s": null }`, role), // ここに事故情報を入れる
+			}
+			if i%4 == 0 {
+				smo.JSON = fmt.Sprintf(`{ "%s": { "time": "18:00", "station": "犬山線布袋駅", "type": "人身事故" } }`, role)
 			}
 			_, nerr := envClient.NotifySupply(&smo)
 			if nerr != nil {
@@ -100,6 +104,7 @@ func main() {
 			} else {
 				//							log.Printf("Sent OK! %#v\n", ge)
 			}
+			i++
 		}
 	}
 
