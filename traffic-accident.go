@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
+	"net/http"
 
 	pbase "github.com/synerex/synerex_proto"
 	sxutil "github.com/synerex/synerex_sxutil"
@@ -12,6 +14,12 @@ import (
 	"time"
 )
 
+type TrainStatus struct {
+	ID     string `json:"id"`
+	Step   string `json:"step"`
+	AccFlg bool   `json:"acc_flg"`
+}
+
 var (
 	nodesrv         = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
 	local           = flag.String("local", "", "Local Synerex Server")
@@ -19,6 +27,7 @@ var (
 	version         = "0.0.0"
 	role            = "TrafficAccident"
 	sxServerAddress string
+	accFlg          = false
 )
 
 func init() {
@@ -44,6 +53,25 @@ func reconnectClient(client *sxutil.SXServiceClient) {
 		log.Printf("Use reconnected server [%s]\n", sxServerAddress)
 	}
 	mu.Unlock()
+}
+
+func trainStatusHandler(w http.ResponseWriter, r *http.Request) {
+	id := r.URL.Query().Get("id")
+	step := r.URL.Query().Get("step")
+
+	status := TrainStatus{ID: id, Step: step, AccFlg: false}
+	if id == "2" && step == "37" {
+		status.AccFlg = true
+	}
+	response, err := json.Marshal(status)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(response)
 }
 
 func main() {
@@ -76,13 +104,17 @@ func main() {
 
 	envClient := sxutil.NewSXServiceClient(client, pbase.JSON_DATA_SVC, fmt.Sprintf("{Client:%s}", role))
 
+	http.HandleFunc("/api/v0/train_status", trainStatusHandler)
+	fmt.Println("Server is running on port 8030")
+	go http.ListenAndServe(":8030", nil)
+
 	// タイマーを開始する
 	ticker := time.NewTicker(15 * time.Second)
 	defer ticker.Stop()
 
 	// 現在時刻を取得し、次の実行時刻まで待機する
 	start := time.Now()
-	adjust := start.Truncate(15 * time.Second).Add(15 * time.Second)
+	adjust := start.Truncate(15 * time.Second).Add(5 * time.Second)
 	time.Sleep(adjust.Sub(start))
 
 	i := 0
