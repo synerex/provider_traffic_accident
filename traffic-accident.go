@@ -28,6 +28,7 @@ var (
 	role            = "TrafficAccident"
 	sxServerAddress string
 	accFlg          = false
+	envClient       *sxutil.SXServiceClient
 )
 
 func init() {
@@ -62,6 +63,18 @@ func trainStatusHandler(w http.ResponseWriter, r *http.Request) {
 	status := TrainStatus{ID: id, Step: step, AccFlg: false}
 	if id == "2" && step == "37" {
 		status.AccFlg = true
+		t := time.Now()
+		fmt.Println("事故発生時刻:", t.Format("15:04:05"))
+		smo := sxutil.SupplyOpts{
+			Name: role,
+			JSON: fmt.Sprintf(`{ "%s": { "time": "18:00", "station": "犬山線布袋駅", "type": "人身事故" } }`, role), // ここに事故情報を入れる
+		}
+		_, nerr := envClient.NotifySupply(&smo)
+		if nerr != nil {
+			log.Printf("Send Fail! %v\n", nerr)
+		} else {
+			//							log.Printf("Sent OK! %#v\n", ge)
+		}
 	}
 	response, err := json.Marshal(status)
 	if err != nil {
@@ -102,7 +115,7 @@ func main() {
 		log.Print("Connecting SynerexServer")
 	}
 
-	envClient := sxutil.NewSXServiceClient(client, pbase.JSON_DATA_SVC, fmt.Sprintf("{Client:%s}", role))
+	envClient = sxutil.NewSXServiceClient(client, pbase.JSON_DATA_SVC, fmt.Sprintf("{Client:%s}", role))
 
 	http.HandleFunc("/api/v0/train_status", trainStatusHandler)
 	fmt.Println("Server is running on port 8030")
@@ -127,9 +140,9 @@ func main() {
 				Name: role,
 				JSON: fmt.Sprintf(`{ "%s": null }`, role), // ここに事故情報を入れる
 			}
-			if i%4 == 0 {
-				smo.JSON = fmt.Sprintf(`{ "%s": { "time": "18:00", "station": "犬山線布袋駅", "type": "人身事故" } }`, role)
-			}
+			// if i%4 == 0 {
+			// 	smo.JSON = fmt.Sprintf(`{ "%s": { "time": "18:00", "station": "犬山線布袋駅", "type": "人身事故" } }`, role)
+			// }
 			_, nerr := envClient.NotifySupply(&smo)
 			if nerr != nil {
 				log.Printf("Send Fail! %v\n", nerr)
