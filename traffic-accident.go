@@ -59,6 +59,7 @@ func reconnectClient(client *sxutil.SXServiceClient) {
 func trainStatusHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Query().Get("id")
 	step := r.URL.Query().Get("step")
+	log.Printf("Called /api/v0/train_status id: %s, step: %s\n", id, step)
 
 	status := TrainStatus{ID: id, Step: step, AccFlg: false}
 	if id == "2" && step == "37" {
